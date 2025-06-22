@@ -3,7 +3,9 @@ package com.example.jetpackcomposeapp.presentation.example
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jetpackcomposeapp.data.api.BaseApiService
-import com.example.jetpackcomposeapp.data.model.SimplePost
+import com.example.jetpackcomposeapp.data.database.entities.Post
+import com.example.jetpackcomposeapp.data.model.ResultWrapper
+import com.example.jetpackcomposeapp.data.repository.PostRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,26 +18,33 @@ import javax.inject.Inject
  * ViewModel cho màn hình ví dụ sử dụng Hilt Dependency Injection
  * 
  * Được cấu hình với Hilt để inject các dependencies:
- * - BaseApiService cho API calls
+ * - PostRepository cho quản lý data từ API và Room Database
+ * - BaseApiService cho các API calls khác
  * 
  * Minh họa các thành phần cơ bản:
  * - State management với StateFlow
+ * - Room Database operations với caching
  * - API calls với Retrofit
  * - Mock WebSocket functionality
- * - Loading states
+ * - Loading states và error handling
  */
 @HiltViewModel
 class SimpleExampleViewModel @Inject constructor(
+    private val postRepository: PostRepository,
     private val apiService: BaseApiService
 ) : ViewModel() {
     
-    // StateFlow cho danh sách posts
-    private val _posts = MutableStateFlow<List<SimplePost>>(emptyList())
-    val posts: StateFlow<List<SimplePost>> = _posts.asStateFlow()
+    // StateFlow cho danh sách posts từ Room database
+    private val _posts = MutableStateFlow<List<Post>>(emptyList())
+    val posts: StateFlow<List<Post>> = _posts.asStateFlow()
     
     // StateFlow cho loading state
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    
+    // StateFlow cho error messages
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
     
     // StateFlow cho tin nhắn WebSocket cuối cùng
     private val _lastWebSocketMessage = MutableStateFlow("")
@@ -45,63 +54,143 @@ class SimpleExampleViewModel @Inject constructor(
     private val _webSocketConnectionState = MutableStateFlow("Chưa kết nối")
     val webSocketConnectionState: StateFlow<String> = _webSocketConnectionState.asStateFlow()
     
-    // Mock data
-    private val mockPosts = listOf(
-        SimplePost(1, 1, "Bài viết đầu tiên", "Đây là nội dung của bài viết đầu tiên từ API giả lập."),
-        SimplePost(2, 1, "Bài viết thứ hai", "Nội dung của bài viết thứ hai với nhiều thông tin hơn."),
-        SimplePost(3, 2, "Bài viết từ user khác", "Đây là bài viết từ một user khác trong hệ thống."),
-        SimplePost(4, 2, "Jetpack Compose", "Hướng dẫn sử dụng Jetpack Compose cho Android development."),
-        SimplePost(5, 3, "MVVM Architecture", "Kiến trúc MVVM trong Android với ViewModel và LiveData/StateFlow.")
-    )
-    
     init {
         // Tự động load posts khi ViewModel được khởi tạo
         loadPosts()
+        
+        // Observe posts từ repository với caching
+        observePosts()
     }
     
     /**
-     * Tải danh sách posts (giả lập API call)
+     * Observe posts từ PostRepository với Room database caching
      */
-    fun loadPosts() {
+    private fun observePosts() {
         viewModelScope.launch {
-            _isLoading.value = true
-            // Giả lập network delay
-            delay(1500)
-            _posts.value = mockPosts
-            _isLoading.value = false
+            postRepository.getAllPosts().collect { result ->
+                when (result) {
+                    is ResultWrapper.Loading -> {
+                        _isLoading.value = true
+                        _errorMessage.value = null
+                    }
+                    is ResultWrapper.Success -> {
+                        _isLoading.value = false
+                        _posts.value = result.data
+                        _errorMessage.value = null
+                    }
+                    is ResultWrapper.Error -> {
+                        _isLoading.value = false
+                        _errorMessage.value = result.message
+                    }
+                }
+            }
         }
     }
     
     /**
-     * Thêm một post mẫu vào danh sách
+     * Tải danh sách posts từ API với force refresh
+     */
+    fun loadPosts() {
+        viewModelScope.launch {
+            postRepository.getAllPosts(forceRefresh = true).collect { result ->
+                when (result) {
+                    is ResultWrapper.Loading -> {
+                        _isLoading.value = true
+                        _errorMessage.value = null
+                    }
+                    is ResultWrapper.Success -> {
+                        _isLoading.value = false
+                        _posts.value = result.data
+                        _errorMessage.value = null
+                    }
+                    is ResultWrapper.Error -> {
+                        _isLoading.value = false
+                        _errorMessage.value = result.message
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Thêm một post mẫu vào database
      */
     fun addSamplePost() {
         viewModelScope.launch {
             _isLoading.value = true
-            delay(500) // Giả lập processing time
             
-            val newPost = SimplePost(
-                id = _posts.value.size + 100,
+            val newPost = Post(
+                id = System.currentTimeMillis().toInt(), // Tạm thời sử dụng timestamp làm ID
                 userId = 99,
                 title = "Post được thêm từ app",
-                body = "Đây là một post mẫu được thêm trực tiếp từ ứng dụng để minh họa chức năng thêm dữ liệu."
+                body = "Đây là một post mẫu được thêm trực tiếp từ ứng dụng để minh họa chức năng thêm dữ liệu vào Room database.",
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis()
             )
             
-            _posts.value = _posts.value + newPost
+            when (val result = postRepository.insertPost(newPost)) {
+                is ResultWrapper.Success -> {
+                    _errorMessage.value = null
+                    // Posts sẽ được update tự động qua observe
+                }
+                is ResultWrapper.Error -> {
+                    _errorMessage.value = "Lỗi khi thêm post: ${result.message}"
+                }
+                is ResultWrapper.Loading -> {
+                    // Không cần xử lý
+                }
+            }
+            
             _isLoading.value = false
         }
     }
     
     /**
-     * Xóa tất cả posts
+     * Xóa tất cả posts khỏi database
      */
     fun clearAllPosts() {
         viewModelScope.launch {
             _isLoading.value = true
-            delay(500) // Giả lập processing time
-            _posts.value = emptyList()
+            
+            when (val result = postRepository.deleteAllPosts()) {
+                is ResultWrapper.Success -> {
+                    _errorMessage.value = null
+                    // Posts sẽ được update tự động qua observe
+                }
+                is ResultWrapper.Error -> {
+                    _errorMessage.value = "Lỗi khi xóa posts: ${result.message}"
+                }
+                is ResultWrapper.Loading -> {
+                    // Không cần xử lý
+                }
+            }
+            
             _isLoading.value = false
         }
+    }
+    
+    /**
+     * Tìm kiếm posts theo từ khóa
+     */
+    fun searchPosts(query: String) {
+        if (query.isBlank()) {
+            // Nếu query rỗng, hiển thị tất cả posts
+            observePosts()
+            return
+        }
+        
+        viewModelScope.launch {
+            postRepository.searchPosts(query).collect { searchResults ->
+                _posts.value = searchResults
+            }
+        }
+    }
+    
+    /**
+     * Clear error message
+     */
+    fun clearError() {
+        _errorMessage.value = null
     }
     
     /**

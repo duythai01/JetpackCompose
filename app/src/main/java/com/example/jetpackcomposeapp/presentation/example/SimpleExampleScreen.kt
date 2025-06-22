@@ -12,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.jetpackcomposeapp.data.model.SimplePost
+import com.example.jetpackcomposeapp.data.database.entities.Post
 
 /**
  * Màn hình ví dụ minh họa các thành phần base cơ bản với Hilt DI
@@ -22,6 +22,7 @@ import com.example.jetpackcomposeapp.data.model.SimplePost
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SimpleExampleScreen(
+    onNavigateToPostList: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     onNavigateTo: (String) -> Unit = {},
     viewModel: SimpleExampleViewModel = hiltViewModel()
@@ -29,6 +30,7 @@ fun SimpleExampleScreen(
     // Collect state từ ViewModel
     val posts by viewModel.posts.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     val lastWebSocketMessage by viewModel.lastWebSocketMessage.collectAsState()
     val webSocketConnectionState by viewModel.webSocketConnectionState.collectAsState()
     
@@ -69,23 +71,27 @@ fun SimpleExampleScreen(
                     onSendMessage = { viewModel.sendSampleWebSocketMessage() }
                 )
                 
+                NavigationSection(
+                    onNavigateToPostList = onNavigateToPostList
+                )
+                
                 HorizontalDivider()
                 
                 // Section thao tác với posts
                 PostActionsSection(
                     onRefresh = { 
                         viewModel.loadPosts()
-                        alertMessage = "Đã tải lại dữ liệu!"
+                        alertMessage = "Đang tải lại dữ liệu từ API..."
                         showAlert = true
                     },
                     onAddPost = { 
                         viewModel.addSamplePost()
-                        alertMessage = "Đã thêm post mẫu!"
+                        alertMessage = "Đang thêm post vào database..."
                         showAlert = true
                     },
                     onClearAll = { 
                         viewModel.clearAllPosts()
-                        alertMessage = "Đã xóa tất cả posts!"
+                        alertMessage = "Đang xóa tất cả posts..."
                         showAlert = true
                     }
                 )
@@ -124,6 +130,20 @@ fun SimpleExampleScreen(
                 }
             }
         }
+    }
+    
+    // Error Alert Dialog
+    errorMessage?.let { error ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("Lỗi") },
+            text = { Text(error) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearError() }) {
+                    Text("OK")
+                }
+            }
+        )
     }
     
     // Alert Dialog
@@ -255,7 +275,7 @@ private fun PostActionsSection(
  */
 @Composable
 private fun PostListSection(
-    posts: List<SimplePost>,
+    posts: List<Post>,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -299,10 +319,10 @@ private fun PostListSection(
 }
 
 /**
- * Item hiển thị thông tin một post
+ * Item hiển thị thông tin một post từ Room database
  */
 @Composable
-private fun PostItem(post: SimplePost) {
+private fun PostItem(post: Post) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -329,8 +349,65 @@ private fun PostItem(post: SimplePost) {
                 color = Color.DarkGray,
                 maxLines = 3
             )
+            
+            Text(
+                text = "Created: ${java.text.SimpleDateFormat("HH:mm dd/MM").format(java.util.Date(post.createdAt))}",
+                fontSize = 10.sp,
+                color = Color.Gray
+            )
         }
     }
 }
 
- 
+/**
+ * Section cho navigation demo
+ */
+@Composable
+private fun NavigationSection(
+    onNavigateToPostList: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "🧭 Navigation Demo",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Navigation Patterns Demo:",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Text(
+                    text = "• Push Navigation - Chuyển đến màn hình mới\n" +
+                          "• Back Navigation - Quay lại màn hình trước\n" + 
+                          "• Parameter Navigation - Truyền dữ liệu\n" +
+                          "• Deep Linking - Navigation với arguments",
+                    fontSize = 12.sp,
+                    color = Color.DarkGray
+                )
+            }
+        }
+        
+        Button(
+            onClick = onNavigateToPostList,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("🚀 Xem Post List (Room + Navigation)")
+        }
+    }
+}
