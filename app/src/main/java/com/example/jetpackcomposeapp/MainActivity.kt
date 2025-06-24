@@ -4,11 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
 import com.example.jetpackcomposeapp.presentation.home.HomeScreen
-import com.example.jetpackcomposeapp.ui.theme.JetpackcomposeAppTheme
+import com.example.jetpackcomposeapp.ui.theme.JetpackComposeAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -33,7 +36,7 @@ class MainActivity : ComponentActivity() {
         }*/
 
         setContent {
-            JetpackcomposeAppTheme {
+            JetpackComposeAppTheme(darkTheme = true) {
                /* val navController = rememberNavController()
                 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -47,3 +50,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
