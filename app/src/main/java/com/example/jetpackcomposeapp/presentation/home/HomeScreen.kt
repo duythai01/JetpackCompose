@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,8 +25,10 @@ import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,9 +41,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.jetpackcomposeapp.R
 import com.example.jetpackcomposeapp.presentation.home.composable.Categories
+import com.example.jetpackcomposeapp.presentation.home.composable.ShimmerListVideoPreview
 import com.example.jetpackcomposeapp.presentation.home.composable.TopBar
 import com.example.jetpackcomposeapp.presentation.home.composable.VideoPreview
 import com.example.jetpackcomposeapp.ui.theme.JetpackComposeAppTheme
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
@@ -70,7 +75,9 @@ fun HomeScreen(
                 onTabSelected = { index ->
                     selectedTabIndex = index
                     when (index) {
-                        0 -> { /* Home - already here */ }
+                        0 -> { /* Home - already here */
+                        }
+
                         1 -> onNavigateToShorts()
                         2 -> onNavigateToCreate()
                         3 -> onNavigateToSubscriptions()
@@ -108,6 +115,11 @@ private fun HomeTopBar(
 private fun HomeContent(
     paddingValues: PaddingValues
 ) {
+    var isLoading by remember { mutableStateOf(true) }
+    LaunchedEffect(true) {
+        delay(5000)
+        isLoading = false
+    }
     LazyColumn(
         contentPadding = PaddingValues(
             top = paddingValues.calculateTopPadding() + 10.dp,
@@ -116,14 +128,20 @@ private fun HomeContent(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        items(10){ index ->
-            VideoPreview(
-                thumbnailRes = R.drawable.thumbnail,
-                title = "Travel Vlog ${index + 1} - Nha Trang Go Go Go!!!",
-                channelName = "mylinhhhhhhhhhhh",
-                avatarRes = R.drawable.avt,
-                views = "104M",
-                posted = "1 day ago"
+        items(10) { index ->
+            ShimmerListVideoPreview(
+                isLoading = isLoading,
+                contentAfterLoading = {
+                    VideoPreview(
+                        thumbnailRes = R.drawable.thumbnail,
+                        title = "Travel Vlog ${index + 1} - Nha Trang Go Go Go!!!",
+                        channelName = "mylinhhhhhhhhhhh",
+                        avatarRes = R.drawable.avt,
+                        views = "104M",
+                        posted = "1 day ago"
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
             )
         }
     }
@@ -259,7 +277,7 @@ private fun HomeScreenPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun HomeBottomNavigationPreview() {
-    JetpackComposeAppTheme{
+    JetpackComposeAppTheme {
         HomeBottomNavigation(
             selectedTabIndex = 0,
             onTabSelected = {}
