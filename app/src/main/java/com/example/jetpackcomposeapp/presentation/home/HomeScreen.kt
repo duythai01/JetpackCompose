@@ -1,11 +1,16 @@
 package com.example.jetpackcomposeapp.presentation.home
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.example.jetpackcomposeapp.R
 import com.example.jetpackcomposeapp.presentation.home.composable.Categories
 import com.example.jetpackcomposeapp.presentation.home.composable.TopBar
+import com.example.jetpackcomposeapp.presentation.home.composable.VideoPreview
 import com.example.jetpackcomposeapp.ui.theme.JetpackComposeAppTheme
 
 @Composable
@@ -75,7 +81,7 @@ fun HomeScreen(
         }
     ) { paddingValues ->
         HomeContent(
-            modifier = Modifier.padding(paddingValues)
+            paddingValues
         )
     }
 }
@@ -94,20 +100,32 @@ private fun HomeTopBar(
             onSearchClick = onSearchClick,
             onProfileClick = onProfileClick
         )
-        // TODO: Implement categories horizontal scroll
         Categories()
     }
 }
 
 @Composable
 private fun HomeContent(
-    modifier: Modifier = Modifier
+    paddingValues: PaddingValues
 ) {
-    Column(
-        modifier = modifier
+    LazyColumn(
+        contentPadding = PaddingValues(
+            top = paddingValues.calculateTopPadding() + 10.dp,
+            bottom = paddingValues.calculateBottomPadding()
+        ),
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // TODO: Implement video list
-        // TODO: Implement lazy loading
+        items(10){ index ->
+            VideoPreview(
+                thumbnailRes = R.drawable.thumbnail,
+                title = "Travel Vlog ${index + 1} - Nha Trang Go Go Go!!!",
+                channelName = "mylinhhhhhhhhhhh",
+                avatarRes = R.drawable.avt,
+                views = "104M",
+                posted = "1 day ago"
+            )
+        }
     }
 }
 
