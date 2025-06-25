@@ -12,4 +12,10 @@
     <string name="shorts">Shorts</string>
     <string name="subscriptions">Subscriptions</string>
     <string name="library">Library</string>
+    <string name="explore">Explore</string>
+    <string name="all">All</string>
+    <string name="gaming">Gaming</string>
+    <string name="sports">Sports</string>
+    <string name="music">Music</string>
+    <string name="anime">Anime</string>
 </resources>

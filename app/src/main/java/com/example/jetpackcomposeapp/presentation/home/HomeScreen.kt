@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.jetpackcomposeapp.R
+import com.example.jetpackcomposeapp.presentation.home.composable.Categories
 import com.example.jetpackcomposeapp.presentation.home.composable.TopBar
 import com.example.jetpackcomposeapp.ui.theme.JetpackComposeAppTheme
 
@@ -94,6 +95,7 @@ private fun HomeTopBar(
             onProfileClick = onProfileClick
         )
         // TODO: Implement categories horizontal scroll
+        Categories()
     }
 }
 
