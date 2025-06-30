@@ -1,5 +1,6 @@
 package com.example.jetpackcomposeapp.presentation.home
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,27 +40,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.example.jetpackcomposeapp.R
 import com.example.jetpackcomposeapp.presentation.home.composable.Categories
 import com.example.jetpackcomposeapp.presentation.home.composable.ShimmerListVideoPreview
 import com.example.jetpackcomposeapp.presentation.home.composable.TopBar
 import com.example.jetpackcomposeapp.presentation.home.composable.VideoPreview
+import com.example.jetpackcomposeapp.presentation.navigation.Navigation
+import com.example.jetpackcomposeapp.presentation.navigation.NavigationBarItems
 import com.example.jetpackcomposeapp.ui.theme.JetpackComposeAppTheme
 import kotlinx.coroutines.delay
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(
-    onNavigateToShorts: () -> Unit = {},
-    onNavigateToCreate: () -> Unit = {},
-    onNavigateToSubscriptions: () -> Unit = {},
-    onNavigateToLibrary: () -> Unit = {},
     onCastClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-
+    val navController = rememberNavController()
     Scaffold(
         topBar = {
             HomeTopBar(
@@ -71,25 +74,15 @@ fun HomeScreen(
         },
         bottomBar = {
             HomeBottomNavigation(
-                selectedTabIndex = selectedTabIndex,
-                onTabSelected = { index ->
-                    selectedTabIndex = index
-                    when (index) {
-                        0 -> { /* Home - already here */
-                        }
-
-                        1 -> onNavigateToShorts()
-                        2 -> onNavigateToCreate()
-                        3 -> onNavigateToSubscriptions()
-                        4 -> onNavigateToLibrary()
-                    }
+                items = NavigationBarItems.items,
+                navController = navController,
+                onTabSelected = {
+                    navController.navigate(it.route)
                 }
             )
         }
-    ) { paddingValues ->
-        HomeContent(
-            paddingValues
-        )
+    ) {
+        Navigation(navController = navController)
     }
 }
 
@@ -141,7 +134,9 @@ private fun HomeContent(
                         posted = "1 day ago"
                     )
                 },
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             )
         }
     }
@@ -149,103 +144,37 @@ private fun HomeContent(
 
 @Composable
 private fun HomeBottomNavigation(
-    selectedTabIndex: Int,
-    onTabSelected: (Int) -> Unit,
+    items: List<NavigationBarItems>,
+    navController: NavController,
+    onTabSelected: (NavigationBarItems) -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
         modifier = modifier
     ) {
-        // Home Tab
-        NavigationBarItem(
-            selected = selectedTabIndex == 0,
-            onClick = { onTabSelected(0) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Home,
-                    contentDescription = stringResource(R.string.home),
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(R.string.home),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
-                )
-            }
-        )
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
 
-        // Shorts Tab
-        NavigationBarItem(
-            selected = selectedTabIndex == 1,
-            onClick = { onTabSelected(1) },
-            icon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.shorts),
-                    contentDescription = stringResource(R.string.shorts),
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(R.string.shorts),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
-                )
-            }
-        )
-
-        // Create Tab (no label, special styling)
-        NavigationBarItem(
-            selected = selectedTabIndex == 2,
-            onClick = { onTabSelected(2) },
-            icon = {
-                CreateButton()
-            },
-            label = null
-        )
-
-        // Subscriptions Tab
-        NavigationBarItem(
-            selected = selectedTabIndex == 3,
-            onClick = { onTabSelected(3) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.Subscriptions,
-                    contentDescription = stringResource(R.string.subscriptions),
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(R.string.subscriptions),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
-                )
-            }
-        )
-
-        // Library Tab
-        NavigationBarItem(
-            selected = selectedTabIndex == 4,
-            onClick = { onTabSelected(4) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.VideoLibrary,
-                    contentDescription = stringResource(R.string.library),
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(R.string.library),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
-                )
-            }
-        )
+        items.forEach{ navigationBarItems ->
+            NavigationBarItem(
+                selected = navigationBarItems.route == currentRoute,
+                onClick = { onTabSelected(navigationBarItems) },
+                icon = navigationBarItems.icon,
+                label = navigationBarItems.title?.let {
+                     {
+                        Text(
+                            text = stringResource(it),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+                        )
+                    }
+                }
+            )
+        }
     }
 }
 
 @Composable
-private fun CreateButton(
+fun CreateButton(
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -271,25 +200,6 @@ private fun CreateButton(
 private fun HomeScreenPreview() {
     JetpackComposeAppTheme {
         HomeScreen()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeBottomNavigationPreview() {
-    JetpackComposeAppTheme {
-        HomeBottomNavigation(
-            selectedTabIndex = 0,
-            onTabSelected = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun CreateButtonPreview() {
-    JetpackComposeAppTheme {
-        CreateButton()
     }
 }
 
