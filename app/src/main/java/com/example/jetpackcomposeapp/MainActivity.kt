@@ -37,14 +37,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             JetpackComposeAppTheme(darkTheme = true) {
-               /* val navController = rememberNavController()
-                
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    NavigationGraph(
-                        navController = navController,
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }*/
                 HomeScreen()
             }
         }

@@ -54,7 +54,6 @@ import com.example.jetpackcomposeapp.presentation.navigation.NavigationBarItems
 import com.example.jetpackcomposeapp.ui.theme.JetpackComposeAppTheme
 import kotlinx.coroutines.delay
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun HomeScreen(
     onCastClick: () -> Unit = {},
@@ -81,8 +80,8 @@ fun HomeScreen(
                 }
             )
         }
-    ) {
-        Navigation(navController = navController)
+    ) { paddingValue ->
+        Navigation(navController = navController, paddingValues = paddingValue)
     }
 }
 
@@ -105,8 +104,9 @@ private fun HomeTopBar(
 }
 
 @Composable
-private fun HomeContent(
-    paddingValues: PaddingValues
+fun HomeContent(
+    paddingValues: PaddingValues,
+    navController: NavHostController
 ) {
     var isLoading by remember { mutableStateOf(true) }
     LaunchedEffect(true) {
@@ -131,7 +131,10 @@ private fun HomeContent(
                         channelName = "mylinhhhhhhhhhhh",
                         avatarRes = R.drawable.avt,
                         views = "104M",
-                        posted = "1 day ago"
+                        posted = "1 day ago",
+                        onClick = {
+                            navController.navigate("video_detail/${index + 1}")
+                        }
                     )
                 },
                 modifier = Modifier

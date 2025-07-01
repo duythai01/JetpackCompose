@@ -3,6 +3,7 @@ package com.example.jetpackcomposeapp.presentation.home.composable
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,12 +39,13 @@ fun VideoPreview(
     @DrawableRes avatarRes: Int,
     channelName: String,
     views: String,
-    posted: String
+    posted: String,
+    onClick: () -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
 
-    Column {
+    Column(modifier = Modifier.clickable { onClick() }) {
         Image(
             painter = painterResource(id = thumbnailRes),
             contentDescription = null,
