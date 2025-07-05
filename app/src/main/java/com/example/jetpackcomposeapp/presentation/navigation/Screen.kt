@@ -14,12 +14,12 @@ import androidx.compose.ui.unit.dp
 import com.example.jetpackcomposeapp.R
 import com.example.jetpackcomposeapp.presentation.home.CreateButton
 
-sealed class NavigationBarItems(
+sealed class Screen(
     val title: Int? = null,
     val icon: @Composable () -> Unit,
     val route: String
 ) {
-    data object Home : NavigationBarItems(
+    data object Home : Screen(
         title = R.string.home,
         icon = {
             Icon(
@@ -31,7 +31,7 @@ sealed class NavigationBarItems(
         route = "home"
     )
 
-    data object Shorts : NavigationBarItems(
+    data object Shorts : Screen(
         title = R.string.shorts,
         icon = {
             Icon(
@@ -43,7 +43,7 @@ sealed class NavigationBarItems(
         route = "shorts"
     )
 
-    data object Subscriptions : NavigationBarItems(
+    data object Subscriptions : Screen(
         title = R.string.subscriptions,
         icon = {
             Icon(
@@ -55,7 +55,7 @@ sealed class NavigationBarItems(
         route = "subscriptions"
     )
 
-    data object Library : NavigationBarItems(
+    data object Library : Screen(
         title = R.string.library,
         icon = {
             Icon(
@@ -67,12 +67,24 @@ sealed class NavigationBarItems(
         route = "library"
     )
 
-    data object Create : NavigationBarItems(
+    data object Create : Screen(
         title = null,
         icon = {
             CreateButton()
         },
         route = "create"
+    )
+
+    data object VideoDetailScreen : Screen(
+        title = null,
+        icon = {
+            Icon(
+                painter = painterResource(id = R.drawable.shorts),
+                contentDescription = stringResource(R.string.shorts),
+                modifier = Modifier.size(24.dp)
+            )
+        },
+        route = "video_detail_screen"
     )
 
     companion object{

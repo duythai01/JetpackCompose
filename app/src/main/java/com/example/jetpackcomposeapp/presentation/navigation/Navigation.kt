@@ -10,16 +10,16 @@ import com.example.jetpackcomposeapp.presentation.video_detail.VideoDetailScreen
 
 @Composable
 fun Navigation(navController: NavHostController, paddingValues: PaddingValues) {
-    NavHost(navController = navController, startDestination = "home") {
-        composable("home") {
+    NavHost(navController = navController, startDestination = Screen.Home.route) {
+        composable(Screen.Home.route) {
             HomeContent(paddingValues = paddingValues, navController = navController)
         }
-        composable("shorts") {}
-        composable("subscriptions") {}
-        composable("library") {}
-        composable("video_detail/{video_url}") { backStackEntry ->
-            val videoUrl = backStackEntry.arguments?.getString("video_url")
-            VideoDetailScreen(videoUrl = videoUrl)
+        composable(Screen.Shorts.route) {}
+        composable(Screen.Create.route) {}
+        composable(Screen.Subscriptions.route) {}
+        composable(Screen.Library.route) {}
+        composable(Screen.VideoDetailScreen.route) {
+            VideoDetailScreen(videoUrl = null)
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.example.jetpackcomposeapp.presentation.home
 
-import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,9 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,22 +20,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Subscriptions
-import androidx.compose.material.icons.outlined.VideoLibrary
-import androidx.compose.material.icons.rounded.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -50,7 +42,7 @@ import com.example.jetpackcomposeapp.presentation.home.composable.ShimmerListVid
 import com.example.jetpackcomposeapp.presentation.home.composable.TopBar
 import com.example.jetpackcomposeapp.presentation.home.composable.VideoPreview
 import com.example.jetpackcomposeapp.presentation.navigation.Navigation
-import com.example.jetpackcomposeapp.presentation.navigation.NavigationBarItems
+import com.example.jetpackcomposeapp.presentation.navigation.Screen
 import com.example.jetpackcomposeapp.ui.theme.JetpackComposeAppTheme
 import kotlinx.coroutines.delay
 
@@ -62,23 +54,41 @@ fun HomeScreen(
     onProfileClick: () -> Unit = {}
 ) {
     val navController = rememberNavController()
+    /*val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val listBottomRoute = listOf(
+        Screen.Home.route,
+        Screen.Shorts.route,
+        Screen.Subscriptions.route,
+        Screen.Library.route,
+        Screen.Create.route,
+    )*/
+    LaunchedEffect(Unit) {
+        Screen.items.forEachIndexed { i, item ->
+            Log.d("CheckItems", "Item $i: $item (route=${item.route})")
+        }
+    }
     Scaffold(
         topBar = {
-            HomeTopBar(
-                onCastClick = onCastClick,
-                onNotificationsClick = onNotificationsClick,
-                onSearchClick = onSearchClick,
-                onProfileClick = onProfileClick
-            )
+//            if(currentRoute != null && currentRoute in listBottomRoute){
+                HomeTopBar(
+                    onCastClick = onCastClick,
+                    onNotificationsClick = onNotificationsClick,
+                    onSearchClick = onSearchClick,
+                    onProfileClick = onProfileClick
+                )
+//            }
         },
         bottomBar = {
-            HomeBottomNavigation(
-                items = NavigationBarItems.items,
-                navController = navController,
-                onTabSelected = {
-                    navController.navigate(it.route)
-                }
-            )
+//            if(currentRoute in listBottomRoute){
+                HomeBottomNavigation(
+                    items = Screen.items,
+                    navController = navController,
+                    onTabSelected = {
+                        navController.navigate(it.route)
+                    }
+                )
+//            }
         }
     ) { paddingValue ->
         Navigation(navController = navController, paddingValues = paddingValue)
@@ -133,7 +143,7 @@ fun HomeContent(
                         views = "104M",
                         posted = "1 day ago",
                         onClick = {
-                            navController.navigate("video_detail/${index + 1}")
+                            navController.navigate(Screen.VideoDetailScreen.route)
                         }
                     )
                 },
@@ -147,9 +157,9 @@ fun HomeContent(
 
 @Composable
 private fun HomeBottomNavigation(
-    items: List<NavigationBarItems>,
+    items: List<Screen>,
     navController: NavController,
-    onTabSelected: (NavigationBarItems) -> Unit,
+    onTabSelected: (Screen) -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
@@ -159,19 +169,24 @@ private fun HomeBottomNavigation(
         val currentRoute = navBackStackEntry?.destination?.route
 
         items.forEach{ navigationBarItems ->
-            NavigationBarItem(
-                selected = navigationBarItems.route == currentRoute,
-                onClick = { onTabSelected(navigationBarItems) },
-                icon = navigationBarItems.icon,
-                label = navigationBarItems.title?.let {
-                     {
-                        Text(
-                            text = stringResource(it),
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
-                        )
+            runCatching {
+                val isSelected = currentRoute != null && navigationBarItems.route == currentRoute
+                NavigationBarItem(
+                    selected = isSelected,
+                    onClick = { onTabSelected(navigationBarItems) },
+                    icon = navigationBarItems.icon,
+                    label = navigationBarItems.title?.let {
+                        {
+                            Text(
+                                text = stringResource(it),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }.onFailure {
+                Log.e("BottomNav", "Crash with item: $navigationBarItems", it)
+            }
         }
     }
 }
